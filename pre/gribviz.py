@@ -4,7 +4,39 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import requests
+import pandas as pd
+import seaborn as sns
 from   datetime import datetime
+from   scipy.optimize import curve_fit
+# Public methods
+
+# I/O:
+# get_filenames                          : get the list of filenames ordered by date
+# inspect                                : inspect current dataset in the grib files and prints info 
+
+# Useful:
+# get_min_max_lat_lon                    : compute min max lat and lon of current dataset 
+# get_elevation                          : get the elevation at a given lat, lon
+
+# Variables timeseries:
+# windspeed_extract_timeseries_lvl       : extract the time series of a wind speed at a given pressure level
+# windspeed_extract_timeseries_10m       : extract the time series of wind speed at 10m
+# variable_extract_timeseries_lvl        : extract the time series of a scalar variable at a given pressure level
+# variable_extract_timeseries_slv        : extract the time series of a scalar variable defined on single level
+# theta_extract_timeseries               : extract the time series of potential temperature at a given point at given heights 
+
+# Plotting and contouring:
+# def_mv_plot_settings                   : defines plot settings for metview contour plots
+# windspeed_plot_timeseries_lvl          : create contour of the time series of wind speed at a given pressure level
+# windspeed_plot_timeseries_10m          : create contour of the time series of wind speed at 10m
+# variable_plot_timeseries_slv           : create contour of the time series of given variable defined on single levels
+
+# Statistics: 
+# compute_wind_stats                     : compute wind stats at a point given wind components (extract using windspeed_extract_timeseries_lvl or windspeed_extract_timeseries_10m)  
+# compute_theta_stats                    : compute theta stats at a point from current dataset 
+
+# Models: 
+# piecewise_linear_potential_theta       : provides a picewise-linear potential temperature models given lapse rate, surface temp, inversion height/strength and free atm lapse rate 
 
 class gribdata:
 
@@ -348,7 +380,7 @@ class gribdata:
             mv.setoutput(mv.png_output(output_width=800, output_name = filename, output_font_scale=2))
             mv.plot(m[t][1], view, diff_cont) 
 
-    # compute wind stats at a point 
+    # compute wind stats at a point given wind components 
     def compute_wind_stats(self, u, v, lat=0, lon=0):
         
         point = [lat, lon]
@@ -496,18 +528,201 @@ class gribdata:
         plt.savefig('10m_wind_stats.png')
         plt.close() 
     
-    # fit a piece-wise linear temperature model at a point to find 
-    # lapse rates, surface temp, inversion height/strength and lapse rate aloft
-    def piecewise_linear_potential_theta(z, theta_ref, gamma_abl, gamma, dtheta_inv, z_inv):
+    # compute theta time series at a point 
+    def theta_extract_timeseries(self, point, hlevs, hourly_step=1):
+
+        # check if we actually have levels
+        if(self.prefix == "single"):
+            raise ValueError("theta_extract_timeseries only supports prefix=levels")
+        
+        if(hlevs[0]==0):
+            raise ValueError("Cannot interpolate to ground level from grib file, increase starting level. Ground temp will be linearly extrapolated")
+
+        filenames_l = self.get_filenames()
+
+        # potential temperature & time vector 
+        th_1d = []
+        time  = []
+
+        # this is pretty slow, might want to speed up 
+        for f in range(len(filenames_l)):
+            if mv.exist(filenames_l[f]):
+
+                # print info 
+                print("Processing file " + filenames_l[f])
+
+                # get fieldsets defined on levels 
+                g     = mv.read(filenames_l[f])
+
+                # get available times 
+                times = mv.unique(mv.valid_date(g))
+
+                # for each time extract temperature and geopotential profiles at latlon points
+                for t in range(len(times)):
+
+                    if t % hourly_step == 0:
+
+                        print(" -> time " + str(times[t]))
+                        
+                        # extract temperature at time t
+                        t_3d_t_pl  = g.select(shortName='t', validityDateTime=times[t])
+
+                        # get potential temperature field (ps should be encoded in the grib)
+                        th_3d_t_pl = mv.pott_p(temperature=t_3d_t_pl)
+
+                        # extract potential temperature and geopotential at time t
+                        zg_3d_pl   = g.select(shortName='z',validityDateTime=times[t]) 
+                        
+                        # extract potential temperature at time t
+                        th_3d_t_ml = mv.ml_to_hl(th_3d_t_pl, zg_3d_pl, None, hlevs, "sea", "linear")
+
+                        # interpolate at lat-lon location
+                        th_1d.append(mv.interpolate(th_3d_t_ml, point))
+
+                        # add time to the list 
+                        time.append(times[t])
+                    else:
+                        continue
+            else:
+                raise ValueError("Cannot open file " + filenames_l[f])  
+
+        return time, th_1d    
+
+    # compute theta stats at a point from current dataset 
+    def compute_theta_stats(self, point, time, hlevs, th_1d):
+
+        # fit a pice-wise linear model to the potential temperature profile
+        params      = []
+
+        # Create output folder
+        path2output = "theta_fit"
+        os.makedirs(path2output, exist_ok=True) 
+
+        for t in range(len(time)):
+
+            # check if first element is None and iterate until we find a valid value
+            if(th_1d[t][0]==None):
+                i = 1
+                while th_1d[t][i] == None:
+                    i += 1
+
+            # save new profiles into a list where None values are excluded 
+            th_1d_valid = th_1d[t][i:]
+            hlevs_valid = hlevs[i:]
+                
+            # compute some quantities to define the bounds 
+            gamma_tot    = (th_1d_valid[-1] - th_1d_valid[0]) / (hlevs_valid[-1] - hlevs_valid[0])
+            theta_ref    = th_1d_valid[0] + (th_1d_valid[1] - th_1d_valid[0]) / (hlevs_valid[1] - hlevs_valid[0])*(-hlevs_valid[0])
+            gamma_ground = (th_1d_valid[1] - th_1d_valid[0]) / (hlevs_valid[1] - hlevs_valid[0])
+            
+            # set the initial guess 
+            initial_guess = [theta_ref,  gamma_ground,  gamma_tot, gamma_tot*250, 500.0, 250.0]  
+
+            # Fit the model to the data
+            lower_bounds =  [theta_ref-1e-5, gamma_ground-0.01, gamma_tot - 0.01,   gamma_tot*250,  0.0,    249.9999]
+            upper_bounds =  [theta_ref+1e-5, gamma_ground+0.01, gamma_tot + 0.01,   10.0,           5000.0, 250.0001]
+
+
+            params_t, params_covariance_t = curve_fit(
+                self.piecewise_linear_potential_theta,
+                    hlevs_valid,
+                    th_1d_valid,
+                    p0=initial_guess,
+                    bounds=(lower_bounds, upper_bounds)
+            )
+            params.append(params_t)
+            # Print the fitted parameters
+            print("Fitted parameters:", params[t])
+
+            # Plot the data and the fitted model
+            plt.scatter(th_1d_valid, hlevs_valid, label='Data')
+            plt.plot(self.piecewise_linear_potential_theta(np.array(hlevs), *params[t]), hlevs, color='red', label='Fitted model')
+            plt.ylabel('Height (m)')
+            plt.xlabel('Temperature (°C)')
+            plt.legend()
+            plt.title('Vertical Profile of Temperature')
+            
+            # Save the plot to a file
+            filename    = f"{path2output}/{t}"
+            plt.savefig(f'{filename}.png')
+            plt.close() 
+
+        # Convert params to DataFrame
+        params_array = np.array(params)
+        color_levels = 'blue'
+        param_names  = ['theta_ref', 'gamma_abl', 'gamma', 'dtheta_inv', 'z_inv']
+        param_lgnd   = [r'$\theta_{\mathrm{ref}}$', r'$\gamma_{\mathrm{ABL}}$', r'$\gamma$', r'$\Delta\theta$', r'$H$']
+        df_params    = pd.DataFrame(params_array[:,:-1], columns=param_names)
+
+        # Enable LaTeX rendering
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='Times New Roman')
+
+        # Create pairplot
+        g = sns.PairGrid(df_params, diag_sharey=False, corner=True)
+
+        # Define a function to add vertical bars on the diagonal
+        def diag_mean(data, **kwargs):
+            median = data.median()
+            mean = data.mean()
+            plt.axvline(median, color='black', linestyle='--')
+            plt.axvline(mean, color='black', linestyle=':')
+            sns.kdeplot(data, **kwargs)
+
+        # Define a function to add vertical and horizontal bars in the subdiagonal plots
+        def off_diag_mean(x, y, **kwargs):
+            median_x = x.median()
+            median_y = y.median()
+            mean_x = x.mean()
+            mean_y = y.mean()
+            plt.axvline(median_x, color='black', linestyle='--')
+            plt.axhline(median_y, color='black', linestyle='--')
+            plt.axvline(mean_x, color='black', linestyle=':')
+            plt.axhline(mean_y, color='black', linestyle=':')
+            sns.kdeplot(x=x, y=y, **kwargs)
+
+        # Map the functions to the grid
+        g.map_diag(diag_mean, color='b', alpha=1)
+        g.map_offdiag(off_diag_mean, color=color_levels)
+
+        # Update axis labels with LaTeX notation
+        for i, ax in enumerate(g.axes.flatten()):
+            if ax is not None:
+                ax.set_xlabel(f"${param_lgnd[i % len(param_lgnd)]}$", fontsize=15)
+                ax.set_ylabel(f"${param_lgnd[i // len(param_lgnd)]}$", fontsize=15)
+
+        # Add title in the top right of the diagram
+        time_interval = f"{time[0]} to {time[-1]}"
+        title_text    = f"Potential temperature individual and joint statistics\nat latitude: {point[0]} deg, longitude: {point[1]} deg\ntime interval: {time_interval}\nDashed line: median, dotted line: mean"
+
+        # Calculate the position for the text
+        plt.subplots_adjust(top=0.9)  # Adjust the top to make space for the title
+        g.figure.text(0.95, 0.95, title_text, ha='right', va='top', fontsize=20)
+
+        # Show plot
+        plt.show()
+
+        # Save the plot to a file
+        plt.savefig('theta_stats.png')
+
+        return df_params
+
+    # provides a picewise-linear potential temperature models given lapse rate, surface temp, inversion height/strength and free atm lapse rate 
+    def piecewise_linear_potential_theta(self, z, theta_ref, gamma_abl, gamma, dtheta_inv, z_inv, delta_inv):
+
+        half_inv  = delta_inv / 2.0
+        z_inv_lo  = z_inv - half_inv
+        z_inv_hi  = z_inv + half_inv
+        gamma_inv = dtheta_inv / delta_inv
 
         f = np.zeros(len(z))
         for i in range(len(z)):
-            if(z[i] < z_inv):
+            if(z[i] < z_inv_lo):
                 f[i] = theta_ref + gamma_abl * z[i]
-            elif z[i] == z_inv:
-                f[i] = theta_ref + gamma_abl * z[i] + dtheta_inv
+            elif(z[i] < z_inv_hi and z[i] >= z_inv_lo):
+                f[i] = theta_ref + gamma_abl * z_inv_lo + gamma_inv * (z[i] - z_inv_lo)
             else:
-                f[i] = theta_ref + gamma_abl * z_inv + dtheta_inv + gamma * (z[i] - z_inv)
+                f[i] = theta_ref + gamma_abl * z_inv_lo + dtheta_inv + gamma * (z[i] - z_inv_hi)
             
         return(f)
     
