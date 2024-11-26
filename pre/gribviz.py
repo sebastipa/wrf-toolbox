@@ -8,6 +8,7 @@ import pandas as pd
 import seaborn as sns
 from   datetime import datetime
 from   scipy.optimize import curve_fit
+
 # Public methods
 
 # I/O:
@@ -15,6 +16,8 @@ from   scipy.optimize import curve_fit
 # inspect                                : inspect current dataset in the grib files and prints info 
 
 # Useful:
+# copy_files_to_dir                      : copy selected files into dest folder (when creating WRF case)
+# link_files_to_dir                      : link selected files into dest folder (when creating WRF case)
 # get_min_max_lat_lon                    : compute min max lat and lon of current dataset 
 # get_elevation                          : get the elevation at a given lat, lon
 
@@ -62,10 +65,11 @@ class gribdata:
                  path            ="/storage/wrf/nobackup/munters/ERA5/"
                  ):
         
+        
         # do some checks
-        if day_range[0] < 1 or day_range[0] > 31:
+        if day_range[0] < 1 or day_range[0] > self.days_in_month[month_range[0] - 1]:
             raise ValueError("Invalid start day")
-        if day_range[1] < 1 or day_range[1] > 31:
+        if day_range[1] < 1 or day_range[1] > self.days_in_month[month_range[1] - 1]:
             raise ValueError("Invalid end day")
         if month_range[0] < 1 or month_range[0] > 12:
             raise ValueError("Invalid start month")
@@ -102,6 +106,20 @@ class gribdata:
             day = 1	
             
         return filenames  
+    
+    def copy_files_to_dir(self, dest_dir):
+        filenames = self.get_filenames()
+        for filename in filenames:
+            print(f"Copying {filename} --> {dest_dir}")
+            os.system(f"cp {filename} {dest_dir}")
+        return
+    
+    def link_files_to_dir(self, dest_dir):
+        filenames = self.get_filenames()
+        for filename in filenames:
+            print(f"Linking {filename} --> {dest_dir}")
+            os.system(f"ln -s {filename} {dest_dir}")
+        return
     
     # inspect the data in the grib files
     def inspect(self):
