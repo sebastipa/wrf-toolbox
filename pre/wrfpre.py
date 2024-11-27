@@ -8,23 +8,43 @@ import cartopy.feature as cfeature
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
-# This class helps to setup a WRF case, creating directories, input files 
-# and showing the configuration of the domains 
+# wrfpre.py   : a Python module to create WRF case directories, set up namelist files and plot WPS domains
+# classes     : wrfcase, wps
+# author      : Sebastiano Stipa
+# date        : 27-11-2024
 
-class case_io:
+# ===============================================================================================
+# Class wrfcase definition  : creates a WRF case directory structure and sets up namelist files
+# case_init                 : creates the case directory structure and for an em_real simulation 
+#                             and copies suitable WRF executables and files
+# create_namelist_wps       : copies namelist.wps from current folder into the case folder and 
+#                             overwirtes start and end dates 
+# create_namelist_wrf       : copies namelist.input from current folder into the case folder and 
+#                             overwirtes start and end dates 
+# set_entry                 : sets an entry in a namelist file
+# remove_entry              : removes an entry from a namelist file
+# create_turbines_wrf       : creates a file with the turbine locations and adds the entry to
+#                             the namelist.input file
+# wps_setup                 : links forcing data and sets up variable table, preparing the case 
+#                             for geogrid, ungrib and metgrid
+# wrf_setup                 : links WPS files to WRF directory, preparing the case for real.exe
+#                             and wrf.exe
+# ===============================================================================================
+
+class wrfcase:
     
-    project       = 'project_name'
-    creation_date = 'case_creation_date'
-    name          = 'case_full_name'
-    author        = 'author_name'
-    forcing_type  = 'forcinhg_data_type'
-    case_dir      = 'case_directory'
-    case_path     = '/absolute_path_to_case_directory/'
-    case_root     = '/absolute_path_to_case_directory/case_dir/'
+    project       = 'project_name'                                            # project of which the case is part of 
+    creation_date = 'case_creation_date'                                      # date of case creation
+    name          = 'case_full_name'                                          # full name of the case
+    author        = 'author_name'                                             # author of the case
+    forcing_type  = 'forcinhg_data_type'                                      # type of forcing data used in the case (eg. 'era5' or 'gfs')
+    case_dir      = 'case_directory'                                          # name of the case directory
+    case_path     = '/absolute_path_to_case_directory/'                       # path to the case directory (excluding case directory)
+    case_root     = '/absolute_path_to_case_directory/case_dir/'              # path to the case directory (including case directory)
 
-    data_dir      = '/absolute_path_to_case_directory/case_dir/forcing_type/'
-    wps_dir       = '/absolute_path_to_case_directory/case_dir/WPS/'
-    wrf_dir       = '/absolute_path_to_case_directory/case_dir/WRF/'
+    data_dir      = '/absolute_path_to_case_directory/case_dir/forcing_type/' # path to the forcing data directory
+    wps_dir       = '/absolute_path_to_case_directory/case_dir/WPS/'          # path to the WPS directory
+    wrf_dir       = '/absolute_path_to_case_directory/case_dir/WRF/'          # path to the WRF directory
     
     def __init__(self, 
                  project, 
@@ -53,7 +73,7 @@ class case_io:
 
         return
     
-    # add starting and trailing / if not present
+    # add starting and trailing '/' if not present
     def adjust_paths(self, path):
 
         if(path[0] != '/'):
@@ -64,7 +84,7 @@ class case_io:
         
         return path
     
-    # remove starting and trailing / from name
+    # remove starting and trailing '/' from filename if present
     def adjust_filedirname(self, filename):
 
         if(filename[0] == '/'):
@@ -74,46 +94,8 @@ class case_io:
             filename = filename[:-1]
 
         return filename
-       
-    def get_int_keyword(self, rel_file_path, keyword):
-
-        filepath = self.adjust_paths(self.case_path + self.case_dir) + self.adjust_filedirname(rel_file_path)
-
-        with open(filepath, 'r') as file:
-            for line in file:
-                match = re.search(keyword, line)
-                if match:
-                    string = re.sub(keyword,"", line)
-                    return([int(s) for s in re.findall(r'\b\d+\b', string)])
-            
-            raise Exception("did not find " + keyword + " keyword\n")
-        
-    def get_flt_keyword(self, rel_file_path, keyword):
-
-        filepath = self.adjust_paths(self.case_path + self.case_dir) + self.adjust_filedirname(rel_file_path)
-
-        with open(filepath, 'r') as file:
-            for line in file:
-                match = re.search(keyword, line)
-                if match:
-                    string = re.sub(keyword,"", line)
-                    return([float(s) for s in re.findall(r"[-+]?(?:\d*\.*\d+)", string)])
-            
-            raise Exception("did not find " + keyword + " keyword\n")
-        
-    def get_str_keyword(self, rel_file_path, keyword):
-
-        filepath = self.adjust_paths(self.case_path + self.case_dir) + self.adjust_filedirname(rel_file_path)
-
-        with open(filepath, 'r') as file:
-            for line in file:
-                match = re.search(keyword, line)
-                if match:
-                    string = re.sub(keyword,"", line)
-                    return(re.findall(r'\w+(?:-\w+)*', string))
-            
-            raise Exception("did not find " + keyword + " keyword\n")
-        
+    
+    # creates the case directory structure and copies WRF executables and files
     def case_init(self, wrf_install_dir, wps_install_dir):
         
         wrf_install_dir = self.adjust_paths(wrf_install_dir)
@@ -158,37 +140,8 @@ class case_io:
         shutil.copytree(wps_install_dir + 'ungrib/Variable_Tables', self.case_root + "WPS/ungrib/Variable_Tables",  dirs_exist_ok=True)
          
         return
-
-class wrf_case(case_io):
     
-    def __init__(self, 
-                 project, 
-                 creation_date, 
-                 name, 
-                 author, 
-                 forcing_type,
-                 case_dir, 
-                 case_path):
-        
-        self.project      = project
-        self.creation_date= creation_date
-        self.name         = name
-        self.author       = author
-        self.forcing_type = forcing_type
-        self.case_dir     = self.adjust_filedirname(case_dir)
-        self.case_path    = self.adjust_paths(case_path)
-        self.case_root    = self.adjust_paths(self.case_path + self.case_dir)
-        self.data_dir     = self.adjust_paths(self.case_root + self.forcing_type.upper())
-        self.wps_dir      = self.adjust_paths(self.case_root + "WPS")
-        self.wrf_dir      = self.adjust_paths(self.case_root + "WRF")
-
-        # check that datatype is a string 
-        if(not isinstance(forcing_type, str)):
-            raise Exception("forcing_type must be a string: eg. 'era5' or 'gfs'\n")
-
-        return
-    
-    # copies namelist.wps from current directory to case directory
+    # copies namelist.wps from current directory to case directory overwriting start and end dates
     def create_namelist_wps(self, 
                             start_year, start_month, start_day, start_hour,
                             end_year,   end_month,   end_day,   end_hour):
@@ -209,6 +162,7 @@ class wrf_case(case_io):
                           str(end_hour).zfill(2) + ':00:00')
         return
     
+    # copies namelist.input from current directory to case directory overwriting start and end dates
     def create_namelist_wrf(self,
                             start_years, start_months, start_days, start_hours,
                             end_years,   end_months,   end_days,   end_hours):
@@ -243,6 +197,7 @@ class wrf_case(case_io):
 
         return
 
+    # removes an entry from a namelist file
     def remove_entry(self, file, section, keyword):
 
         def starts_with_keyword(line, keyword):
@@ -281,6 +236,8 @@ class wrf_case(case_io):
             
         return
 
+    # Sets an entry in a namelist file. If the entry is not found, it is added to the section. 
+    # If the section is not found, it is created and the entry is added.
     def set_entry(self, file, section, keyword, entry):
 
         def starts_with_keyword(line, keyword):
@@ -340,6 +297,9 @@ class wrf_case(case_io):
 
         return
     
+    def create_turbines_wrf(self, path_to_turbines):
+        return
+    
     # links datasets to WPS folder and sets up suitable variable table
     def wps_setup(self, var_table='Vtable.ERA-interim.pl', link_grib='link_grib.csh'):
         
@@ -357,7 +317,8 @@ class wrf_case(case_io):
 
         return
     
-    def link_metgrid(self):
+    # links WPS files to WRF directory
+    def wrf_setup(self):
             
         # save current path 
         original_directory = os.getcwd()
@@ -368,7 +329,15 @@ class wrf_case(case_io):
         os.chdir(original_directory)
         
         return
-    
+
+# ===============================================================================================
+# Class wps definition: reads namelist.wps and provides methods to get setup info and plot domains
+# get_bounds                : returns the bounds of a domain in projected coordinates as (x_min, x_max, y_min, y_max)
+# get_proj                  : returns the projection of the domain as a cartopy.crs object
+# add_domain_rectangle      : adds a rectangle to a plot representing a domain 
+# plot_domains              : plots the domains of the WPS setup
+# ===============================================================================================
+
 class wps:
 
     filename          = "namelist.wps"

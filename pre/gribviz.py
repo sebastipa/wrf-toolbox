@@ -6,40 +6,48 @@ import matplotlib.pyplot as plt
 import requests
 import pandas as pd
 import seaborn as sns
-from   datetime import datetime
+from   datetime import datetime, timedelta
 from   scipy.optimize import curve_fit
 
-# Public methods
+# gribviz.py  : a Python module to help in WRF simulation preprocessing by extracting statistics 
+#               and visualizing data from grib files
+# classes     : gribdata
+# author      : Sebastiano Stipa
+# date        : 27-11-2024
 
+# ===============================================================================================
+# Class gribdata definition              : see methods below
+# 
 # I/O:
 # get_filenames                          : get the list of filenames ordered by date
 # inspect                                : inspect current dataset in the grib files and prints info 
-
+#
 # Useful:
 # copy_files_to_dir                      : copy selected files into dest folder (when creating WRF case)
 # link_files_to_dir                      : link selected files into dest folder (when creating WRF case)
 # get_min_max_lat_lon                    : compute min max lat and lon of current dataset 
 # get_elevation                          : get the elevation at a given lat, lon
-
+#
 # Variables timeseries:
 # windspeed_extract_timeseries_lvl       : extract the time series of a wind speed at a given pressure level
 # windspeed_extract_timeseries_10m       : extract the time series of wind speed at 10m
 # variable_extract_timeseries_lvl        : extract the time series of a scalar variable at a given pressure level
 # variable_extract_timeseries_slv        : extract the time series of a scalar variable defined on single level
 # theta_extract_timeseries               : extract the time series of potential temperature at a given point at given heights 
-
+#
 # Plotting and contouring:
 # def_mv_plot_settings                   : defines plot settings for metview contour plots
 # windspeed_plot_timeseries_lvl          : create contour of the time series of wind speed at a given pressure level
 # windspeed_plot_timeseries_10m          : create contour of the time series of wind speed at 10m
 # variable_plot_timeseries_slv           : create contour of the time series of given variable defined on single levels
-
+#
 # Statistics: 
 # compute_wind_stats                     : compute wind stats at a point given wind components (extract using windspeed_extract_timeseries_lvl or windspeed_extract_timeseries_10m)  
 # compute_theta_stats                    : compute theta stats at a point from current dataset 
-
+#
 # Models: 
 # piecewise_linear_potential_theta       : provides a picewise-linear potential temperature models given lapse rate, surface temp, inversion height/strength and free atm lapse rate 
+# ===============================================================================================
 
 class gribdata:
 
@@ -48,42 +56,52 @@ class gribdata:
     end_day       = 1
     start_month   = 1
     end_month     = 1
-    year          = 2022
+    start_year    = 2022
+    end_year      = 2022
     path          = "/storage/wrf/nobackup/munters/ERA5"
     prefix        = "levels"
     extension     = "grib"
     
     # constants 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    monts_in_year = 12 
 
     # class constructor
     def __init__(self, day_range =[1, 1], 
                  month_range     =[1, 1], 
-                 year            =2022, 
+                 year_range      =[2022, 2022],
                  prefix          ="levels", 
-                 extension       = "grib", 
+                 extension       ="grib", 
                  path            ="/storage/wrf/nobackup/munters/ERA5/"
                  ):
         
-        
-        # do some checks
-        if day_range[0] < 1 or day_range[0] > self.days_in_month[month_range[0] - 1]:
-            raise ValueError("Invalid start day")
-        if day_range[1] < 1 or day_range[1] > self.days_in_month[month_range[1] - 1]:
-            raise ValueError("Invalid end day")
-        if month_range[0] < 1 or month_range[0] > 12:
-            raise ValueError("Invalid start month")
-        if month_range[1] < 1 or month_range[1] > 12:
-            raise ValueError("Invalid end month")
-        if month_range[0] > month_range[1]:
-            raise ValueError("Start month is later than end month") 
+        # check that starting date exists 
+        try:
+            datetime(year_range[0], month_range[0], day_range[0])
+            start_exists = True
+        except ValueError:
+            start_exists = False
+        try:
+            datetime(year_range[1], month_range[1], day_range[1])
+            end_exists = True
+        except ValueError:
+            end_exists = False
+
+        if not start_exists:
+            raise ValueError("Invalid start date")
+        if not end_exists:  
+            raise ValueError("Invalid end date")
+
+        if datetime(year_range[0], month_range[0], day_range[0]) > datetime(year_range[1], month_range[1], day_range[1]):
+            raise ValueError("Start date is after end date")
         
         # assign values to class variables
         self.start_day   = day_range[0]
         self.end_day     = day_range[1]
         self.start_month = month_range[0]
         self.end_month   = month_range[1]
-        self.year        = year
+        self.start_year  = year_range[0]
+        self.end_year    = year_range[1]
         self.path        = path
         self.prefix      = prefix
         self.extension   = extension	
@@ -92,19 +110,16 @@ class gribdata:
     # return an array of filenames ordered by date 
     def get_filenames(self):
         filenames = []
-        day       = self.start_day
-        month     = self.start_month
-        year      = self.year
+        start    = datetime(self.start_year, self.start_month, self.start_day)
+        end      = datetime(self.end_year, self.end_month, self.end_day)
 
-        while month <= self.end_month:
-            while day <= self.days_in_month[month - 1]:
-                filenames.append(self.path + "/" + str(self.year) + "/" + self.prefix + "_" + str(year) + "_" + str(month).zfill(2) + "_" + str(day).zfill(2) + ".grib")
-                if (day == self.end_day and month == self.end_month):
-                    break
-                day += 1
-            month += 1
-            day = 1	
-            
+        while start <= end:
+            year  = start.year
+            month = start.month
+            day   = start.day
+            start += timedelta(days=1)
+            filenames.append(self.path + "/" + str(year) + "/" + self.prefix + "_" + str(year) + "_" + str(month).zfill(2) + "_" + str(day).zfill(2) + ".grib")
+               
         return filenames  
     
     def copy_files_to_dir(self, dest_dir):
