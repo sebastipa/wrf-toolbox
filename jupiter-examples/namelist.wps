@@ -1,0 +1,35 @@
+&share
+ wrf_core = 'ARW',
+ max_dom = 1,
+ start_date = '2022-02-13_00:00:00'
+ end_date   = '2022-02-20_00:00:00'
+ interval_seconds = 3600
+/
+
+&geogrid
+ parent_id         =   1, 1, 2, 2,
+ parent_grid_ratio =   1, 3, 3, 3,
+ i_parent_start    =   1, 30, 72, 72,
+ j_parent_start    =   1, 28, 40, 40,
+ e_we              =  115, 190, 151, 151,
+ e_sn              =  115, 190, 151, 151,
+ geog_data_res = 'default','default', 'default', 'default',
+ dx = 18000,
+ dy = 18000,
+ map_proj = 'mercator',
+ ref_lat   =  53.50,
+ ref_lon   = 1.91,
+ truelat1  =  55.0,
+ truelat2  =  50.1,
+ stand_lon = 1.91,
+ geog_data_path = '/storage/wrf/nobackup/public/WPS_GEOG/'
+/
+
+&ungrib
+ out_format = 'WPS',
+ prefix = 'sl',
+/
+
+&metgrid
+ fg_name = 'sl'
+/

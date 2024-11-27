@@ -1,0 +1,147 @@
+ &time_control
+ start_year                          = 2022, 2022, 2022,
+ start_month                         = 2 , 2 , 2 ,
+ start_day                           = 13 , 13 , 13 ,
+ start_hour                          = 0 , 0 , 0 ,
+ end_year                            = 2022 , 2022 , 2022 ,
+ end_month                           = 2 , 2 , 2 ,
+ end_day                             = 20 , 20 , 20 ,
+ end_hour                            = 0 , 0 , 0 ,
+ interval_seconds                    = 3600,
+ input_from_file                     = .true., .true., .true., .true.,
+ history_interval                    = 60, 60, 60, 
+ frames_per_outfile                  = 1, 1, 1,
+ restart                             = .false.,
+ restart_interval                    = 1440,
+ io_form_history                     = 2,
+ io_form_restart                     = 2,
+ io_form_input                       = 2,
+ io_form_boundary                    = 2,
+ iofields_filename					 = 'additional_fields.txt' , 'additional_fields.txt' , 'additional_fields.txt' ,
+ ignore_iofields_warning             = .true.,
+ debug_level                         = 0,
+ adjust_output_times                 = .true.,
+ history_outname                     = 'results/wrfout_d<domain>_<date>' ,
+ io_form_auxhist15                   = 2,
+ frames_per_auxhist15                = 1, 1, 1, 1,
+ auxhist15_outname                   = 'results/fifteen_min_d<domain>_<date>' ,
+ auxhist15_interval                  = 15,0,15,15,
+ /
+
+ &domains
+ max_dom                             = 1 ,
+ time_step                           = 30,
+ use_adaptive_time_step              = .true.,
+ step_to_output_time                 = .true.,
+ target_cfl                          = 0.60, 0.60, 0.60, 0.60,
+ target_hcfl                         = 0.84, 0.84, 0.84, 0.84,
+ max_step_increase_pct               =    5,  51,  51, 51,
+ starting_time_step                  =   30,  10,   3,  3,
+ max_time_step                       =  100,  36,  12, 12,
+ min_time_step                       =   10,   3,   1,  1,
+ parent_id         				 	 = 1, 1,  2,  2, 
+ parent_grid_ratio 					 = 1, 3,  3,  3,
+ i_parent_start    					 = 1, 30, 72, 72, 
+ j_parent_start    					 = 1, 28, 40, 40, 
+ grid_id                             = 1, 2,  3,  4,
+ parent_time_step_ratio              = 1, 3,  3,  3,
+ e_we              					 = 115, 190, 151, 151,
+ e_sn              					 = 115, 190, 151, 151,
+ e_vert                              = 80,   80,   80,   80, 
+ eta_levels                          = 1.000000, 0.998621, 0.997244, 0.995868, 0.994495,
+                                       0.993123, 0.991753, 0.990385, 0.989018, 0.987653,
+                                       0.986291, 0.984929, 0.983570, 0.982213, 0.980857,
+                                       0.979503, 0.978151, 0.976800, 0.975451, 0.974104,
+                                       0.972759, 0.971415, 0.970073, 0.968732, 0.967393,
+                                       0.966054, 0.964715, 0.963377, 0.962036, 0.960690,
+                                       0.959337, 0.957970, 0.956580, 0.955150, 0.953657,
+                                       0.952060, 0.950295, 0.948260, 0.945792, 0.942634,
+                                       0.938390, 0.932460, 0.923975, 0.911752, 0.894345,
+                                       0.870275, 0.838489, 0.798900, 0.752652, 0.701859,
+                                       0.648956, 0.596096, 0.544846, 0.496177, 0.450589,
+                                       0.408266, 0.369196, 0.333257, 0.300271, 0.270038,
+                                       0.242351, 0.217011, 0.193825, 0.172615, 0.153215,
+                                       0.135473, 0.119246, 0.104407, 0.090836, 0.078426,
+                                       0.067077, 0.056698, 0.047207, 0.038528, 0.030591,
+                                       0.023333, 0.016696, 0.010626, 0.005076, 0.000000,
+ dzstretch_s                         = 1.05
+ dzstretch_u                         = 1.3,
+ dzbot                               = 50.
+ max_dz                              = 1000.
+ p_top_requested                     = 5000,
+ num_metgrid_levels                  = 38,
+ num_metgrid_soil_levels             = 4,
+ dx                                  = 18000, 6000, 2000, 
+ dy                                  = 18000, 6000, 2000,
+ feedback                            = 0,
+ smooth_option                       = 2,
+ /
+
+ &physics
+ windfarm_opt 			             = 0,   0,   1,   
+ bl_mynn_tkeadvect                   =.false.,.false.,.true.,
+ mp_physics                          = 4,   4,   4,   
+ cu_physics                          = 1,   1,   0,   
+ ra_lw_physics                       = 4,   4,   4,  
+ ra_sw_physics                       = 4,   4,   4,   
+ bl_pbl_physics                      = 5,   5,   5,   
+ bl_mynn_mixlength 					 = 0,
+ sf_sfclay_physics                   = 2,   2,   2,   
+ sf_surface_physics                  = 2,   2,   2,   
+ radt                                = 12, 12,  12,  
+ swint_opt 							 = 1,
+ bldt                                = 0,   0,   0,
+ cudt                                = 5,   5,   5,  
+ icloud                              = 1,
+ num_land_cat                        = 21,
+ num_soil_layers 					 = 4,
+ sst_update 						 = 0,
+ ensdim								 = 144,
+ fractional_seaice                   = 0,
+ tice2tsk_if2cold 					 = .true.,
+ seaice_threshold 					 = 0.,
+ isfflx								 = 1,
+ surface_input_source 				 = 1,
+ prec_acc_dt 						 = 60, 60, 30,
+ /
+
+ &ice_blade
+ iceblade_opt 						 = 1,1,1,
+ sum_qcqi_wsm 						 = 1,1,1,
+ /
+
+ &fdda
+ /
+
+ &dynamics
+ w_damping                           = 1,
+ diff_opt                            = 1,
+ km_opt                              = 4,
+ diff_6th_opt                        = 2,     2,     2,   
+ diff_6th_factor                     = 0.06,  0.08,  0.1,  
+ base_temp                           = 290.
+ damp_opt                            = 0,
+ zdamp                               = 5000.,  5000.,  5000., 
+ dampcoef                            = 0.15,   0.15,   0.15,   0.15,
+ khdif                               = 0,    0,    0,   0,
+ kvdif                               = 0,    0,    0,   0,
+ non_hydrostatic                     = .true., .true., .true., .true.,
+ moist_adv_opt                       = 1,      1, 1,
+ scalar_adv_opt                      = 1,      1, 1,
+ /
+
+ &bdy_control
+ spec_bdy_width                      = 5,
+ spec_zone 							 = 1,
+ relax_zone 						 = 4,
+ specified                           = .true., .false., false., 
+ nested 							 = .false., .true., .true., 
+ /
+
+ &grib2
+ /
+
+ &namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+ /
