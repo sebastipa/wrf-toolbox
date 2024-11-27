@@ -15,40 +15,6 @@ from   scipy.optimize import curve_fit
 # author      : Sebastiano Stipa
 # date        : 27-11-2024
 
-# ===============================================================================================
-# Class gribdata definition              : see methods below
-# 
-# I/O:
-# get_filenames                          : get the list of filenames ordered by date
-# inspect                                : inspect current dataset in the grib files and prints info 
-#
-# Useful:
-# copy_files_to_dir                      : copy selected files into dest folder (when creating WRF case)
-# link_files_to_dir                      : link selected files into dest folder (when creating WRF case)
-# get_min_max_lat_lon                    : compute min max lat and lon of current dataset 
-# get_elevation                          : get the elevation at a given lat, lon
-#
-# Variables timeseries:
-# windspeed_extract_timeseries_lvl       : extract the time series of a wind speed at a given pressure level
-# windspeed_extract_timeseries_10m       : extract the time series of wind speed at 10m
-# variable_extract_timeseries_lvl        : extract the time series of a scalar variable at a given pressure level
-# variable_extract_timeseries_slv        : extract the time series of a scalar variable defined on single level
-# theta_extract_timeseries               : extract the time series of potential temperature at a given point at given heights 
-#
-# Plotting and contouring:
-# def_mv_plot_settings                   : defines plot settings for metview contour plots
-# windspeed_plot_timeseries_lvl          : create contour of the time series of wind speed at a given pressure level
-# windspeed_plot_timeseries_10m          : create contour of the time series of wind speed at 10m
-# variable_plot_timeseries_slv           : create contour of the time series of given variable defined on single levels
-#
-# Statistics: 
-# compute_wind_stats                     : compute wind stats at a point given wind components (extract using windspeed_extract_timeseries_lvl or windspeed_extract_timeseries_10m)  
-# compute_theta_stats                    : compute theta stats at a point from current dataset 
-#
-# Models: 
-# piecewise_linear_potential_theta       : provides a picewise-linear potential temperature models given lapse rate, surface temp, inversion height/strength and free atm lapse rate 
-# ===============================================================================================
-
 class gribdata:
 
     """
