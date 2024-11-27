@@ -13,25 +13,35 @@ import matplotlib.pyplot as plt
 # author      : Sebastiano Stipa
 # date        : 27-11-2024
 
-# ===============================================================================================
-# Class wrfcase definition  : creates a WRF case directory structure and sets up namelist files
-# case_init                 : creates the case directory structure and for an em_real simulation 
-#                             and copies suitable WRF executables and files
-# create_namelist_wps       : copies namelist.wps from current folder into the case folder and 
-#                             overwirtes start and end dates 
-# create_namelist_wrf       : copies namelist.input from current folder into the case folder and 
-#                             overwirtes start and end dates 
-# set_entry                 : sets an entry in a namelist file
-# remove_entry              : removes an entry from a namelist file
-# create_turbines_wrf       : creates a file with the turbine locations and adds the entry to
-#                             the namelist.input file
-# wps_setup                 : links forcing data and sets up variable table, preparing the case 
-#                             for geogrid, ungrib and metgrid
-# wrf_setup                 : links WPS files to WRF directory, preparing the case for real.exe
-#                             and wrf.exe
-# ===============================================================================================
-
 class wrfcase:
+    """
+    A class to represent a WRF case setup. Contains methods to create a WRF case directory structure and to set up namelist files
+
+    Attributes
+    ----------
+    project : str
+        The project of which the case is part of.
+    creation_date : str
+        The date of case creation.
+    name : str
+        The full name of the case.
+    author : str
+        The author of the case.
+    forcing_type : str
+        The type of forcing data used in the case (e.g., 'era5' or 'gfs').
+    case_dir : str
+        The name of the case directory.
+    case_path : str
+        The path to the case directory (excluding case directory).
+    case_root : str
+        The path to the case directory (including case directory).
+    data_dir : str
+        The path to the forcing data directory.
+    wps_dir : str
+        The path to the WPS directory.
+    wrf_dir : str
+        The path to the WRF directory.
+    """
     
     project       = 'project_name'                                            # project of which the case is part of 
     creation_date = 'case_creation_date'                                      # date of case creation
@@ -54,7 +64,28 @@ class wrfcase:
                  forcing_type,
                  case_dir, 
                  case_path):
-        
+
+        """
+        Constructs all the necessary attributes for the wrfcase object.
+
+        Parameters
+        ----------
+        project : str
+            The project of which the case is part of.
+        creation_date : str
+            The date of case creation.
+        name : str
+            The full name of the case.
+        author : str
+            The author of the case.
+        forcing_type : str
+            The type of forcing data used in the case (e.g., 'era5' or 'gfs').
+        case_dir : str
+            The name of the case directory.
+        case_path : str
+            The path to the case directory (excluding case directory).
+        """
+
         self.project      = project
         self.creation_date= creation_date
         self.name         = name
@@ -73,8 +104,21 @@ class wrfcase:
 
         return
     
-    # add starting and trailing '/' if not present
     def adjust_paths(self, path):
+
+        """
+        Add starting and trailing '/' if not present
+
+        Parameters
+        ----------
+        path : str
+            The path to adjust.
+
+        Returns
+        -------
+        str
+            The adjusted filename.
+        """
 
         if(path[0] != '/'):
             path = '/' + path
@@ -84,8 +128,21 @@ class wrfcase:
         
         return path
     
-    # remove starting and trailing '/' from filename if present
     def adjust_filedirname(self, filename):
+
+        """
+        Removes starting and trailing '/' from filename if present.
+
+        Parameters
+        ----------
+        filename : str
+            The filename to adjust.
+
+        Returns
+        -------
+        str
+            The adjusted filename.
+        """
 
         if(filename[0] == '/'):
             filename = filename[1:]
@@ -95,9 +152,19 @@ class wrfcase:
 
         return filename
     
-    # creates the case directory structure and copies WRF executables and files
     def case_init(self, wrf_install_dir, wps_install_dir):
         
+        """
+        Creates the case directory structure and copies WRF executables and files.
+
+        Parameters
+        ----------
+        wrf_install_dir : str
+            The path to the WRF installation directory.
+        wps_install_dir : str
+            The path to the WPS installation directory.
+        """
+
         wrf_install_dir = self.adjust_paths(wrf_install_dir)
         wps_install_dir = self.adjust_paths(wps_install_dir)	
 
@@ -141,11 +208,33 @@ class wrfcase:
          
         return
     
-    # copies namelist.wps from current directory to case directory overwriting start and end dates
     def create_namelist_wps(self, 
                             start_year, start_month, start_day, start_hour,
                             end_year,   end_month,   end_day,   end_hour):
-        
+
+        """
+        Copies namelist.wps from the current directory to the case directory, overwriting start and end dates.
+
+        Parameters
+        ----------
+        start_year : int
+            The start year.
+        start_month : int
+            The start month.
+        start_day : int
+            The start day.
+        start_hour : int
+            The start hour.
+        end_year : int
+            The end year.
+        end_month : int
+            The end month.
+        end_day : int
+            The end day.
+        end_hour : int
+            The end hour.
+        """
+
         shutil.copy('namelist.wps', self.case_root + "WPS/namelist.wps")
 
         # overwrite start and end dates
@@ -167,6 +256,29 @@ class wrfcase:
                             start_years, start_months, start_days, start_hours,
                             end_years,   end_months,   end_days,   end_hours):
         
+        """
+        Copies namelist.input from the current directory to the case directory, overwriting start and end dates.
+
+        Parameters
+        ----------
+        start_years : list of int
+            The start years.
+        start_months : list of int
+            The start months.
+        start_days : list of int
+            The start days.
+        start_hours : list of int
+            The start hours.
+        end_years : list of int
+            The end years.
+        end_months : list of int
+            The end months.
+        end_days : list of int
+            The end days.
+        end_hours : list of int
+            The end hours.
+        """
+
         shutil.copy('namelist.input', self.case_root + "WRF/namelist.input")
 
         # create a string to be added as an entry 
@@ -199,6 +311,19 @@ class wrfcase:
 
     # removes an entry from a namelist file
     def remove_entry(self, file, section, keyword):
+
+        """
+        Removes an entry from a namelist file.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the file.
+        section : str
+            The section in the file.
+        entry : str
+            The entry to remove.
+        """
 
         def starts_with_keyword(line, keyword):
             pattern = r'^\s*' + re.escape(keyword.strip()) + r'\b'
@@ -239,6 +364,21 @@ class wrfcase:
     # Sets an entry in a namelist file. If the entry is not found, it is added to the section. 
     # If the section is not found, it is created and the entry is added.
     def set_entry(self, file, section, keyword, entry):
+
+        """
+        Sets an entry in a namelist file.
+
+        Parameters
+        ----------
+        filename : str
+            The name of the file.
+        section : str
+            The section in the file.
+        entry : str
+            The entry to set.
+        value : str
+            The value to set the entry to.
+        """
 
         def starts_with_keyword(line, keyword):
             pattern = r'^\s*' + re.escape(keyword.strip()) + r'\b'
@@ -298,11 +438,32 @@ class wrfcase:
         return
     
     def create_turbines_wrf(self, path_to_turbines):
+
+        """
+        Creates turbine data for WRF simulations.
+
+        Parameters
+        ----------
+        path_to_turbines : str
+            The path to the turbine data file.
+        """
+
         return
     
     # links datasets to WPS folder and sets up suitable variable table
     def wps_setup(self, var_table='Vtable.ERA-interim.pl', link_grib='link_grib.csh'):
         
+        """
+        Links datasets to the WPS folder and sets up a suitable variable table.
+
+        Parameters
+        ----------
+        var_table : str, optional
+            The variable table to use (default is 'Vtable.ERA-interim.pl').
+        link_grib : str, optional
+            The script to link the grib files (default is 'link_grib.csh').
+        """
+
         # copy the variable table to the WPS folder
         shutil.copy(self.wps_dir + 'ungrib/Variable_Tables/' + var_table, self.wps_dir + 'Vtable')	
 
@@ -319,6 +480,11 @@ class wrfcase:
     
     # links WPS files to WRF directory
     def wrf_setup(self):
+
+        """
+        Links WPS files to the WRF directory.
+
+        """
             
         # save current path 
         original_directory = os.getcwd()
@@ -339,6 +505,47 @@ class wrfcase:
 # ===============================================================================================
 
 class wps:
+
+    """
+    A class to represent the WPS setup.
+
+    Attributes
+    ----------
+    filename : str
+        The name of the WPS namelist file.
+    ndomains : int
+        The number of domains.
+    parent_id : int
+        The parent ID of the domain.
+    parent_grid_ratio : int
+        The parent grid ratio of the domain.
+    i_parent_start : int
+        The starting i-index of the parent domain.
+    j_parent_start : int
+        The starting j-index of the parent domain.
+    e_we : int
+        The number of grid points in the west-east direction.
+    e_sn : int
+        The number of grid points in the south-north direction.
+    geog_data_res : str
+        The geographical data resolution.
+    dx : int
+        The grid spacing in the west-east direction.
+    dy : int
+        The grid spacing in the south-north direction.
+    map_proj : str
+        The map projection.
+    ref_lat : float
+        The reference latitude.
+    ref_lon : float
+        The reference longitude.
+    truelat1 : float
+        The first true latitude.
+    truelat2 : float
+        The second true latitude.
+    stand_lon : float
+        The standard longitude.
+    """
 
     filename          = "namelist.wps"
 
@@ -448,6 +655,15 @@ class wps:
 
     def get_proj(self):
 
+        """
+        Returns the projection of the domain as a cartopy.crs object.
+
+        Returns
+        -------
+        cartopy.crs
+            The projection of the domain.
+        """
+
         match self.map_proj[0]:
             case "lambert":
                 return(crs.LambertConformal(central_longitude=self.stand_lon[0],standard_parallels=(self.truelat1[0], self.truelat2[0])))                       
@@ -461,6 +677,15 @@ class wps:
                 raise Exception("Unknown map projection\n")
             
     def get_bounds(self, domain_id=1):
+
+        """
+        Returns the bounds of a domain in projected coordinates.
+
+        Returns
+        -------
+        tuple
+            The bounds of the domain as (x_min, x_max, y_min, y_max).
+        """
     
         if self.map_proj[0]=="lat-lon":
             meters2lat = 1.0 / 111320.0
@@ -525,24 +750,41 @@ class wps:
         return(x_min, x_max, y_min, y_max)
     
     def add_domain_rectangle(self, ax, domain_id=1, color='black'):
-            
-            # get projection 
-            proj = self.get_proj()
 
-            # get domain bounds
-            x_min, x_max, y_min, y_max = self.get_bounds(domain_id)
-    
-            # Create a rectangle in the Mercator projection's coordinates
-            rectangle = patches.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min,
-                                    linewidth=2, edgecolor=color, facecolor='none', transform=proj)
-            
-            ax.add_patch(rectangle)
+        """
+        Adds a rectangle to a plot representing a domain.
 
-            ax.text(x_min + (x_max - x_min) / 5, y_max+5e4, "D " + str(domain_id), color=color,
-                    horizontalalignment='center', verticalalignment='center', transform=proj, fontsize=12)
-            
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axes to which the rectangle will be added.
+        domain_id : int
+            The ID of the domain to be added.
+        **kwargs : dict
+            Additional keyword arguments for the rectangle.
+        """
+
+        # get projection 
+        proj = self.get_proj()
+
+        # get domain bounds
+        x_min, x_max, y_min, y_max = self.get_bounds(domain_id)
+
+        # Create a rectangle in the Mercator projection's coordinates
+        rectangle = patches.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min,
+                                linewidth=2, edgecolor=color, facecolor='none', transform=proj)
+        
+        ax.add_patch(rectangle)
+
+        ax.text(x_min + (x_max - x_min) / 5, y_max+5e4, "D " + str(domain_id), color=color,
+                horizontalalignment='center', verticalalignment='center', transform=proj, fontsize=12)
+        
     def plot_domains(self):
 
+        """
+        Plots the domains of the WPS setup.
+        """
+        
         # Create the plot with Mercator projection
         fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={'projection': self.get_proj()})
 
