@@ -51,6 +51,25 @@ from   scipy.optimize import curve_fit
 
 class gribdata:
 
+    """
+    A class to represent and manipulate GRIB data for WRF simulation preprocessing.
+
+    Attributes
+    ----------
+    day_range : list of int
+        The range of days to process.
+    month_range : list of int
+        The range of months to process.
+    year_range : list of int
+        The range of years to process.
+    prefix : str
+        The prefix for the filenames.
+    extension : str
+        The extension for the filenames.
+    path : str
+        The path to the directory containing the GRIB files.
+    """
+
     # dummy initialization
     start_day     = 1
     end_day       = 1
@@ -75,6 +94,25 @@ class gribdata:
                  path            ="/storage/wrf/nobackup/munters/ERA5/"
                  ):
         
+        """
+        Constructs all the necessary attributes for the gribdata object.
+
+        Parameters
+        ----------
+        day_range : list of int, optional
+            The range of days to process (default is [1, 1]).
+        month_range : list of int, optional
+            The range of months to process (default is [1, 1]).
+        year_range : list of int, optional
+            The range of years to process (default is [2022, 2022]).
+        prefix : str, optional
+            The prefix for the filenames (default is "levels").
+        extension : str, optional
+            The extension for the filenames (default is "grib").
+        path : str, optional
+            The path to the directory containing the GRIB files (default is "/storage/wrf/nobackup/munters/ERA5/").
+        """
+
         # check that starting date exists 
         try:
             datetime(year_range[0], month_range[0], day_range[0])
@@ -109,6 +147,16 @@ class gribdata:
 
     # return an array of filenames ordered by date 
     def get_filenames(self):
+
+        """
+        Get the list of filenames ordered by date.
+
+        Returns
+        -------
+        list of str
+            The list of filenames ordered by date.
+        """
+
         filenames = []
         start    = datetime(self.start_year, self.start_month, self.start_day)
         end      = datetime(self.end_year, self.end_month, self.end_day)
@@ -123,6 +171,16 @@ class gribdata:
         return filenames  
     
     def copy_files_to_dir(self, dest_dir):
+
+        """
+        Copy selected files into the destination folder (when creating WRF case).
+
+        Parameters
+        ----------
+        dest_dir : str
+            The destination directory where the files will be copied.
+        """
+
         filenames = self.get_filenames()
         for filename in filenames:
             print(f"Copying {filename} --> {dest_dir}")
@@ -130,6 +188,15 @@ class gribdata:
         return
     
     def link_files_to_dir(self, dest_dir):
+
+        """
+        Link selected files into the destination folder (when creating WRF case).
+
+        Parameters
+        ----------
+        dest_dir : str
+            The destination directory where the files will be linked.
+        """
         filenames = self.get_filenames()
         for filename in filenames:
             print(f"Linking {filename} --> {dest_dir}")
@@ -138,6 +205,11 @@ class gribdata:
     
     # inspect the data in the grib files
     def inspect(self):
+
+        """
+        Inspect the current dataset in the GRIB files and print information.
+        """
+
         filenames = self.get_filenames()
         fs        = mv.read(filenames[0])
         df        = fs.ls(filter={"step":0, "time":0}, extra_keys=['name', 'units'])
@@ -146,6 +218,15 @@ class gribdata:
 
     # compute min max lat and lon 
     def get_min_max_lat_lon(self, verbose=False):
+
+        """
+        Compute the minimum and maximum latitude and longitude of the current dataset.
+
+        Returns
+        -------
+        tuple
+            The minimum and maximum latitude and longitude as (min_lat, max_lat, min_lon, max_lon).
+        """
 
         filenames = self.get_filenames()
         g         = mv.read(filenames[0])
@@ -172,6 +253,22 @@ class gribdata:
 
     # get the elevation at a given lat, lon (it doesn't work very well)
     def get_elevation(self, lat=0, lon=0):
+
+        """
+        Get the elevation at a given latitude and longitude (needs more testing).
+
+        Parameters
+        ----------
+        lat : float
+            The latitude of the location.
+        lon : float
+            The longitude of the location.
+
+        Returns
+        -------
+        float
+            The elevation at the given latitude and longitude.
+        """
         
         url = f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lon}"
         response = requests.get(url)
@@ -193,6 +290,21 @@ class gribdata:
     
     # extract the time series of a wind speed at a given pressure level
     def windspeed_extract_timeseries_lvl(self, level="500"):
+
+        """
+        Extract the time series of wind speed at a given pressure level.
+
+        Parameters
+        ----------
+        level : str
+            The pressure level to extract.
+
+        Returns
+        -------
+        list of tuple
+            The time series and wind speed data.
+        """
+
         if(self.prefix == "levels"):
             filenames = self.get_filenames()
             data = []
@@ -217,6 +329,16 @@ class gribdata:
         
     # extract the time series of wind speed at 10m
     def windspeed_extract_timeseries_10m(self):
+
+        """
+        Extract the time series of wind speed at 10m.
+
+        Returns
+        -------
+        list of tuple
+            The time series and wind speed data.
+        """
+
         if(self.prefix == "single"):
             filenames = self.get_filenames()
             data = []
@@ -241,6 +363,23 @@ class gribdata:
 
     # extrtact the time series of a scalar variable defined on pressure levels
     def variable_extract_timeseries_lvl(self, var="t", level="500"):
+
+        """
+        Extract the time series of a scalar variable defined on pressure levels.
+
+        Parameters
+        ----------
+        var : str
+            The variable to extract.
+        level : str
+            The pressure level to extract.
+
+        Returns
+        -------
+        list of tuple
+            The time series and variable data.
+        """
+
         if(self.prefix == "levels"):
             filenames = self.get_filenames()
             data = []
@@ -262,6 +401,21 @@ class gribdata:
         
     # extrtact the time series of a scalar variable defined on single level
     def variable_extract_timeseries_slv(self, var="sp"):
+
+        """
+        Extract the time series of a scalar variable defined on single levels.
+
+        Parameters
+        ----------
+        var : str
+            The variable to extract.
+
+        Returns
+        -------
+        list of tuple
+            The time series and variable data.
+        """
+
         if(self.prefix == "single"):
             filenames = self.get_filenames()
             data = []
@@ -283,6 +437,20 @@ class gribdata:
 
     # get plotting variables 
     def def_mv_plot_settings(self, minmax=[0, 0]):
+
+        """
+        Defines the plot settings to be passed to Metview contour plots mv.plot().
+
+        Parameters
+        ----------
+        minmax : list of float
+            The minimum and maximum values of the variable.
+
+        Returns
+        -------
+        tuple
+            The view and contour settings.
+        """
 
         cmin   = np.floor(minmax[0])
         cmax   = np.ceil(minmax[1])
@@ -329,6 +497,17 @@ class gribdata:
     # create plots of the time series of wind speed at a given pressure level
     def windspeed_plot_timeseries_lvl(self, path2output="./snapshots_ws", level="500"):
         
+        """
+        Plot time series of windspeed at a given level. Data must be defined on pressure levels.
+
+        Parameters
+        ----------
+        path2output : str
+            The path to the output directory.
+        level : str
+            The pressure level to plot.
+        """
+
         # get wind speed at 500 hPa
         ws = self.windspeed_extract_timeseries_lvl(level)  
 
@@ -358,6 +537,17 @@ class gribdata:
     # create plots of the time series of wind speed at 10m
     def windspeed_plot_timeseries_10m(self, path2output="./snapshots_ws10"):
         
+        """
+        Plot time series of 10 wind speed. Data must be defined on single levels.
+
+        Parameters
+        ----------
+        path2output : str
+            The path to the output directory.
+        var : str
+            The variable to plot.
+        """
+
         # get wind speed at 500 hPa
         ws = self.windspeed_extract_timeseries_10m()  
 
@@ -387,6 +577,17 @@ class gribdata:
     # create plots of the time series of given variable defined on single levels
     def variable_plot_timeseries_slv(self, path2output="./snapshots_slv", var="sp"):
         
+        """
+        Plot time series of variable defined on single levels.
+
+        Parameters
+        ----------
+        path2output : str
+            The path to the output directory.
+        var : str
+            The variable to plot.
+        """
+
         # get variable
         m = self.variable_extract_timeseries_slv(var)  
 
@@ -416,6 +617,28 @@ class gribdata:
     # compute wind stats at a point given wind components 
     def compute_wind_stats(self, u, v, lat=0, lon=0):
         
+        """
+        Compute wind statistics.
+
+        Parameters
+        ----------
+        point : list of float
+            The latitude and longitude of the point.
+        time : list of datetime
+            The time series.
+        hlevs : list of float
+            The height levels.
+        u_1d : list of float
+            The u-component of the wind.
+        v_1d : list of float
+            The v-component of the wind.
+
+        Returns
+        -------
+        DataFrame
+            The wind statistics.
+        """
+
         point = [lat, lon]
         n_time_u = len(u)
         n_time_v = len(v)
@@ -564,6 +787,24 @@ class gribdata:
     # compute theta time series at a point 
     def theta_extract_timeseries(self, point, hlevs, hourly_step=1):
 
+        """
+        Extract potential temperature time series.
+
+        Parameters
+        ----------
+        point : list of float
+            The latitude and longitude of the point.
+        hlevs : list of float
+            The height levels.
+        hourly_step : int, optional
+            The hourly step for extraction (default is 1).
+
+        Returns
+        -------
+        tuple
+            The time series and potential temperature data.
+        """
+
         # check if we actually have levels
         if(self.prefix == "single"):
             raise ValueError("theta_extract_timeseries only supports prefix=levels")
@@ -623,6 +864,26 @@ class gribdata:
 
     # compute theta stats at a point from current dataset 
     def compute_theta_stats(self, point, time, hlevs, th_1d):
+
+        """
+        Compute potential temperature statistics.
+
+        Parameters
+        ----------
+        point : list of float
+            The latitude and longitude of the point.
+        time : list of datetime
+            The time series.
+        hlevs : list of float
+            The height levels.
+        th_1d : list of float
+            The potential temperature data.
+
+        Returns
+        -------
+        DataFrame
+            The potential temperature statistics.
+        """
 
         # fit a pice-wise linear model to the potential temperature profile
         params      = []
@@ -742,6 +1003,32 @@ class gribdata:
 
     # provides a picewise-linear potential temperature models given lapse rate, surface temp, inversion height/strength and free atm lapse rate 
     def piecewise_linear_potential_theta(self, z, theta_ref, gamma_abl, gamma, dtheta_inv, z_inv, delta_inv):
+
+        """
+        Compute the piecewise-linear potential temperature model.
+
+        Parameters
+        ----------
+        z : float
+            The height.
+        theta_ref : float
+            The reference potential temperature.
+        gamma_abl : float
+            The adiabatic lapse rate in the atmospheric boundary layer.
+        gamma : float
+            The free atmospheric lapse rate.
+        dtheta_inv : float
+            The potential temperature inversion strength.
+        z_inv : float
+            The height of the inversion.
+        delta_inv : float
+            The inversion width.
+
+        Returns
+        -------
+        float
+            The potential temperature profile on z.
+        """
 
         half_inv  = delta_inv / 2.0
         z_inv_lo  = z_inv - half_inv
