@@ -72,11 +72,11 @@ class gribdata:
         year_range : list of int, optional
             The range of years to process (default is [2022, 2022]).
         prefix : str, optional
-            The prefix for the filenames (default is "levels").
+            The prefix for the filenames (default is "levels"). :noindex:
         extension : str, optional
-            The extension for the filenames (default is "grib").
+            The extension for the filenames (default is "grib"). :noindex:
         path : str, optional
-            The path to the directory containing the GRIB files (default is "/storage/wrf/nobackup/munters/ERA5/").
+            The path to the directory containing the GRIB files (default is "/storage/wrf/nobackup/munters/ERA5/"). :noindex:
         """
 
         # check that starting date exists 
