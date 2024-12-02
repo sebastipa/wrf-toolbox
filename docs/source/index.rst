@@ -16,11 +16,4 @@ are still under development, so please be patient.
    :caption: Contents:
 
    modules
-   pre
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

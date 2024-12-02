@@ -19,11 +19,3 @@ pre.wrfpre module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: pre
-   :members:
-   :undoc-members:
-   :show-inheritance:
