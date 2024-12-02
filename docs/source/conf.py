@@ -13,7 +13,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 project = 'wrf-toolbox'
 copyright = '2024, Sebastiano Stipa'
 author = 'Sebastiano Stipa'
-release = '0'
+release = '0.1'
+version = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
