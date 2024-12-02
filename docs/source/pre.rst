@@ -12,6 +12,14 @@ pre.gribviz module
    :undoc-members:
    :show-inheritance:
 
+pre.wrfpre module
+-----------------
+
+.. automodule:: pre.wrfpre
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
