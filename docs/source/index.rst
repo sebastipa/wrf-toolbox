@@ -6,6 +6,11 @@
 Welcome to wrf-toolbox's documentation!
 =======================================
 
+**wrf-toolbox** is a Python library that helps is the pre processing and postprocessing 
+of WRF model data. It is designed to be simple and intuitive to use. The library (as this page)
+are still under development, so please be patient.
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
