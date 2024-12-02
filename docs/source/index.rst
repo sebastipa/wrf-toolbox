@@ -11,6 +11,7 @@ Welcome to wrf-toolbox's documentation!
    :caption: Contents:
 
    modules
+   pre
 
 Indices and tables
 ==================
